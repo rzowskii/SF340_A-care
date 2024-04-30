@@ -23,7 +23,7 @@ db.connect((err) => {
 app.use(express.static('public'))
 
 app.get('/posts', (req, res) => {
-  const sql = 'SELECT sex, COUNT(*) as count, AVG(age) as avg_age, AVG(bmi) as avg_bmi FROM web GROUP BY sex';
+  const sql = "SELECT sex, COUNT(*) as count, AVG(age) as avg_age, AVG(bmi) as avg_bmi, AVG(bmr) as avg_bmr FROM web WHERE sex IN ('female', 'male') GROUP BY sex";
   db.query(sql, (err, results) => {
     if (err) {
       return res.status(500).json({ error: 'Internal server error' });
@@ -31,11 +31,13 @@ app.get('/posts', (req, res) => {
     const totalCount = results.reduce((acc, cur) => acc + cur.count, 0);
     const totalAvgAge = results.reduce((acc, cur) => acc + cur.avg_age * cur.count, 0) / totalCount;
     const totalAvgBmi = results.reduce((acc, cur) => acc + cur.avg_bmi * cur.count, 0) / totalCount;
+    const totalAvgBmr = results.reduce((acc, cur) => acc + cur.avg_bmr * cur.count, 0) / totalCount;
     res.json({
       total: {
         count: totalCount,
         avg_age: totalAvgAge,
-        avg_bmi: totalAvgBmi
+        avg_bmi: totalAvgBmi,
+        avg_bmr: totalAvgBmr
       },
       sex: results
     });
@@ -43,12 +45,15 @@ app.get('/posts', (req, res) => {
 });
 
 app.post('/posts', (req, res) => {
-  const { sex1, age1, bmi } = req.body;
-  db.query('INSERT INTO web (sex, age, bmi) VALUES (?, ?, ?)', [sex1, age1, bmi ], (err, result) => {
+  const { sex1, age1, bmi ,bmr} = req.body;
+  if (sex1 != "female" && sex1 != "male"){
+    return console.error("Who the fuck are u bitch!");
+  }
+  db.query('INSERT INTO web (sex, age, bmi,bmr) VALUES (?, ?, ?,?)', [sex1, age1, bmi,bmr ], (err, result) => {
     if (err) {
       return console.error(err.message);
     }
-    res.send({ id: result.insertId, sex1, age1, bmi });
+    res.send({ id: result.insertId, sex1, age1, bmi,bmr });
   });
 });
 
